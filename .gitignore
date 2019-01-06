@@ -1,0 +1,5 @@
+*~
+Snake/obj
+Snake/bin/Debug
+Snake/bin/Release/*
+!Snake/bin/Release/Snake.scr
