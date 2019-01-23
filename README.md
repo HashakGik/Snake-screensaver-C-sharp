@@ -30,6 +30,4 @@ Features
 Remarks
 -------
 
-- The project is in a draft state, therefore some gameplay elements are missing (e.g. bonus animals) and the user interface is minimal (each element is displayed as a square)
-- The snake's body position is inferred from the playing field (a positive `int` is represented as part of the snake and at each tick is decremented in order to "move" the snake forward). Eventually it will be refactored into a more efficient `List` of body segments
-- Strings are in Italian.
+- The project is in a draft state, therefore the user interface is minimal (each element is displayed as a square).

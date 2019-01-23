@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using System.Collections.Generic;
 
 namespace Snake
 {
@@ -19,7 +20,7 @@ namespace Snake
         [DllImport("user32.dll")]
         static extern bool GetClientRect(IntPtr hWnd, out Rectangle lpRect);
 
-        private Snake s;
+        private SnakeController s;
         private bool gameover;
         private int i;
         private bool preview;
@@ -45,14 +46,14 @@ namespace Snake
             this.i = 0;
             this.gameover = false;
 
-            this.s = new Snake(m[this.i], m.Head[this.i], 7);
+            this.s = new SnakeController(this.fieldWidth, this.fieldHeight, 7, m[this.i], m.Head[this.i]);
 
             // Creates the game over delegate: it changes the timer's interval to 5 seconds and notifies the Paint event of the game over, finally it creates a new Snake instance with the next maze and attaches itself as the game over delegate for the new instance.
-            Snake.GameOver D = () => {
+            SnakeController.GameOver D = () => {
                 this.i = (this.i + 1) % 8;
                 this.gameover = true;
                 timer1.Interval = 5000;
-                this.s = new Snake(m[this.i], m.Head[this.i], 7);
+                this.s = new SnakeController(this.fieldWidth, this.fieldHeight, 7, m[this.i], m.Head[this.i]);
                 timer1.Enabled = true;
             };
             D += delegate { this.s.OnGameOver += D; };
@@ -98,13 +99,15 @@ namespace Snake
         }
 
         /// <summary>
-        /// Paint event handler. During a game over it displays "Game over" at the center of the form, otherwise  it draws playing field, current maze number, current score and current speed.
+        /// Paint event handler. During a game over it displays "Game over" at the center of the form, otherwise  it draws playing field, current maze number, current score, current speed and, if available, the time left for eating the bonus.
         /// The playing field is scaled so that fills the entire form.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
+            List<Point> field = this.s.Field;
+
             int blockW = this.Width / this.fieldWidth;
             int blockH = (this.Height - 50) / this.fieldHeight;
 
@@ -117,17 +120,16 @@ namespace Snake
 
             if (!this.gameover)
             {
-                e.Graphics.DrawString("Maze: " + this.i, DefaultFont, Brushes.Black, new Rectangle(0, 0, this.Width / 3, 50), f);
-                e.Graphics.DrawString("Score: " + this.s.Score, DefaultFont, Brushes.Black, new Rectangle(this.Width / 3, 0, this.Width / 3, 50), f);
-                e.Graphics.DrawString("Speed: " + this.speed, DefaultFont, Brushes.Black, new Rectangle(2 * this.Width / 3, 0, this.Width / 3, 50), f);
+                e.Graphics.DrawString("Maze: " + this.i, DefaultFont, Brushes.Black, new Rectangle(0, 0, this.Width / 4, 50), f);
+                e.Graphics.DrawString("Score: " + this.s.Score, DefaultFont, Brushes.Black, new Rectangle(this.Width / 4, 0, this.Width / 4, 50), f);
+                e.Graphics.DrawString("Speed: " + this.speed, DefaultFont, Brushes.Black, new Rectangle(2 * this.Width / 4, 0, this.Width / 4, 50), f);
+                if (this.s.RemainingBonusTicks > 0)
+                    e.Graphics.DrawString("Bonus: " + this.s.RemainingBonusTicks, DefaultFont, Brushes.Black, new Rectangle(3 * this.Width / 4, 0, this.Width / 4, 50), f);
+
                 e.Graphics.DrawRectangle(Pens.Black, xShift, yShift, this.fieldWidth * blockW, this.fieldHeight * blockH);
 
-                for (int i = 0; i < this.fieldWidth; i++)
-                    for (int j = 0; j < this.fieldHeight; j++)
-                    {
-                        if (this.s.Field[i, j] != 0)
-                            e.Graphics.FillRectangle(Brushes.Black, xShift + i * blockW, yShift + j * blockH, blockW, blockH);
-                    }
+                foreach (Point p in field)
+                            e.Graphics.FillRectangle(Brushes.Black, xShift + p.X * blockW, yShift + p.Y * blockH, blockW, blockH);
             }
             else
                 e.Graphics.DrawString("Game over", DefaultFont, Brushes.Black, new Rectangle(0, 0, this.Width, this.Height), f);
@@ -160,17 +162,17 @@ namespace Snake
         {
             switch (e.KeyCode)
             {
-                case Keys.Up:
-                    this.s.FaceNorth();
-                    break;
-                case Keys.Down:
-                    this.s.FaceSouth();
-                    break;
                 case Keys.Left:
                     this.s.FaceWest();
                     break;
                 case Keys.Right:
                     this.s.FaceEast();
+                    break;
+                case Keys.Up:
+                    this.s.FaceNorth();
+                    break;
+                case Keys.Down:
+                    this.s.FaceSouth();
                     break;
                 case Keys.Escape:
                     Application.Exit();
