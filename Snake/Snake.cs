@@ -102,7 +102,7 @@ namespace Snake
         /// </summary>
         public void Eat()
         {
-            Point tmp = this.Body[0];
+            Point tmp = this.Body[this.Body.Count - 1];
 
             switch (this.Direction)
             {
@@ -120,7 +120,7 @@ namespace Snake
                     break;
             }
 
-            this.Body.Insert(0, tmp);
+            this.Body.Add(tmp);
         }
 
         /// <summary>
